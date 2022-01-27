@@ -17,6 +17,23 @@ SDL_Surface *screen = NULL;
 int fps = 0;
 bool fps_on = false;
 
+#ifdef MIYOO
+double mysin(double a)
+{
+	a = a - (int)(a / (2 * M_PI)) * (2 * M_PI);
+	return sin(a);
+}
+
+double mycos(double a)
+{
+	a = a - (int)(a / (2 * M_PI)) * (2 * M_PI);
+	return cos(a);
+}
+
+#define sin mysin
+#define cos mycos
+#endif
+
 Uint32 getPixel(SDL_Surface *s, int x, int y)
 {
 	int i = y * s->w + x;
