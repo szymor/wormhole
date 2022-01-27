@@ -61,26 +61,26 @@ int main(int argc, char *argv[])
 	SDL_ShowCursor(SDL_DISABLE);
 
 	SDL_Surface *texture = IMG_Load("checker.png");
-    texture = SDL_DisplayFormat(texture);
+	texture = SDL_DisplayFormat(texture);
 	SDL_Surface *shadow = IMG_Load("shadow.png");
 
-	int distmap[SCREEN_HEIGHT][SCREEN_WIDTH];
-	for (int y = 0; y < SCREEN_HEIGHT; ++y)
+	int distmap[2 * SCREEN_HEIGHT][2 * SCREEN_WIDTH];
+	for (int y = 0; y < 2 * SCREEN_HEIGHT; ++y)
 	{
-		int yy = y - SCREEN_HEIGHT / 2;
-		for (int x = 0; x < SCREEN_WIDTH; ++x)
+		int yy = y - SCREEN_HEIGHT;
+		for (int x = 0; x < 2 * SCREEN_WIDTH; ++x)
 		{
-			int xx = x - SCREEN_WIDTH / 2;
+			int xx = x - SCREEN_WIDTH;
 			distmap[y][x] = (int)(2 * TEXTURE_SIZE * (SCREEN_WIDTH / 2) / sqrt(xx * xx + yy * yy)) % TEXTURE_SIZE;
 		}
 	}
-	int anglemap[SCREEN_HEIGHT][SCREEN_WIDTH];
-	for (int y = 0; y < SCREEN_HEIGHT; ++y)
+	int anglemap[2 * SCREEN_HEIGHT][2 * SCREEN_WIDTH];
+	for (int y = 0; y < 2 * SCREEN_HEIGHT; ++y)
 	{
-		int yy = y - SCREEN_HEIGHT / 2;
-		for (int x = 0; x < SCREEN_WIDTH; ++x)
+		int yy = y - SCREEN_HEIGHT;
+		for (int x = 0; x < 2 * SCREEN_WIDTH; ++x)
 		{
-			int xx = x - SCREEN_WIDTH / 2;
+			int xx = x - SCREEN_WIDTH;
 			anglemap[y][x] = (int)(8 * TEXTURE_SIZE * ((atan2(yy, xx) / M_PI) + 1)) % TEXTURE_SIZE;
 		}
 	}
@@ -88,6 +88,8 @@ int main(int argc, char *argv[])
 	double move_speed = TEXTURE_SIZE;
 	double angle_offset = 0;
 	double dist_offset = 0;
+	double shift_x = 0;
+	double shift_y = 0;
 
 	bool quit = false;
 	Uint32 curr = SDL_GetTicks();
@@ -159,18 +161,23 @@ int main(int argc, char *argv[])
 		int aoff = angle_offset;
 		int doff = dist_offset;
 
+		shift_x = (SCREEN_WIDTH / 12) * sin(2 * curr / 1000.0) + (SCREEN_WIDTH / 2);
+		shift_y = (SCREEN_HEIGHT / 12) * cos(3 * curr / 1000.0) + (SCREEN_HEIGHT / 2);
+		int sx = shift_x;
+		int sy = shift_y;
+
 		SDL_FillRect(screen, NULL, SDL_MapRGB(screen->format, 0, 0, 0));
 		SDL_LockSurface(screen);
 		for (int y = 0; y < SCREEN_HEIGHT; ++y)
 			for (int x = 0; x < SCREEN_WIDTH; ++x)
 			{
-				int tx = (anglemap[y][x] + aoff) % TEXTURE_SIZE;
-				int ty = (distmap[y][x] + doff) % TEXTURE_SIZE;
+				int tx = (anglemap[y + sy][x + sx] + aoff) % TEXTURE_SIZE;
+				int ty = (distmap[y + sy][x + sx] + doff) % TEXTURE_SIZE;
 				Uint32 c = getPixel(texture, tx, ty);
 				setPixel(screen, x, y, c);
 			}
 		SDL_UnlockSurface(screen);
-		SDL_BlitSurface(shadow, NULL, screen, NULL);
+		SDL_BlitSurface(shadow, NULL, screen, &(SDL_Rect){ .x = -sx + (SCREEN_WIDTH / 2), .y = -sy + (SCREEN_HEIGHT / 2) });
 		if (fps_on)
 			fps_draw();
 		SDL_Flip(screen);
